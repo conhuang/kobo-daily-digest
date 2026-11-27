@@ -50,7 +50,7 @@ jobs:
           fi
           mkdir -p dist/digests
 
-      - name: Build today's digests (HN + TLDR Tech) and purge expired digests
+      - name: Build today's digests (HN, TLDR Tech, BBC 中文, 阮一峰周刊) and purge expired digests
         env:
           MAX_ARTICLES: ${{ github.event.inputs.max_articles || '15' }}
           RETENTION_DAYS: ${{ github.event.inputs.retention_days || '4' }}
@@ -58,6 +58,8 @@ jobs:
           kobo-digest build \
             --source hn \
             --source tldr \
+            --source bbc-zh \
+            --source ruanyf \
             --out dist/digests \
             --max-articles "$MAX_ARTICLES" \
             --retention-days "$RETENTION_DAYS"

@@ -11,13 +11,18 @@ from .models import Article, Digest
 
 EINK_CSS = """\
 body {
-  font-family: Georgia, "Noto Serif", serif;
+  font-family: Georgia, "Noto Serif", "Noto Serif CJK SC", "Songti SC", serif;
   line-height: 1.55;
   margin: 0.8em 1em;
 }
+body.lang-zh {
+  font-family: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  line-height: 1.78;
+  letter-spacing: 0.02em;
+}
 h1, h2, h3, h4 {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-  line-height: 1.25;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+  line-height: 1.3;
   margin-top: 1.2em;
   margin-bottom: 0.4em;
   page-break-after: avoid;
@@ -28,7 +33,7 @@ h1.article-title {
   margin-bottom: 0.3em;
 }
 .meta {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans CJK SC", "PingFang SC", sans-serif;
   font-size: 0.82em;
   color: #444;
   border-bottom: 1px solid #bbb;
@@ -60,13 +65,16 @@ h1.article-title {
 }
 p {
   margin-top: 0;
-  margin-bottom: 0.8em;
+  margin-bottom: 0.85em;
 }
 blockquote {
   border-left: 3px solid #888;
   margin: 0.9em 0;
   padding-left: 0.9em;
   font-style: italic;
+}
+body.lang-zh blockquote {
+  font-style: normal;
 }
 pre, code {
   font-family: "Courier New", Courier, monospace;
@@ -112,7 +120,7 @@ th, td {
   font-size: 1.02em;
 }
 .toc-sub {
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans CJK SC", "PingFang SC", sans-serif;
   font-size: 0.8em;
   color: #555;
   margin-top: 0.2em;
@@ -121,7 +129,7 @@ th, td {
   margin-top: 1.6em;
   padding-top: 0.6em;
   border-top: 1px solid #ccc;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans CJK SC", "PingFang SC", sans-serif;
   font-size: 0.8em;
   color: #555;
 }
@@ -132,7 +140,11 @@ def _esc(text: str) -> str:
     return html.escape(text, quote=True)
 
 
-def _article_meta_line(article: Article) -> str:
+def _is_zh(digest: Digest) -> bool:
+    return digest.language.lower().startswith("zh")
+
+
+def _article_meta_line(article: Article, is_zh: bool) -> str:
     bits: List[str] = []
     if article.section:
         bits.append(_esc(article.section))
@@ -143,35 +155,49 @@ def _article_meta_line(article: Article) -> str:
     if article.comment_count is not None:
         bits.append(f"{article.comment_count} comments")
     if article.author:
-        bits.append(f"by {_esc(article.author)}")
-    bits.append(f"~{article.read_minutes} min read")
+        bits.append(_esc(article.author) if is_zh else f"by {_esc(article.author)}")
+    if is_zh:
+        if article.cjk_char_count > 0:
+            bits.append(f"约 {article.cjk_char_count} 字")
+        bits.append(f"约 {article.read_minutes} 分钟")
+    else:
+        bits.append(f"~{article.read_minutes} min read")
     return " · ".join(bits)
 
 
 def _render_overview_xhtml(digest: Digest) -> str:
+    is_zh = _is_zh(digest)
+    lang = _esc(digest.language)
+    body_class = ' class="lang-zh"' if is_zh else ""
+
     items_html: List[str] = []
     for idx, article in enumerate(digest.articles, start=1):
         href = f"article_{idx:02d}.xhtml"
         items_html.append(
             f'<li class="toc-item">'
             f'<div class="toc-title"><a href="{href}">{idx}. {_esc(article.title)}</a></div>'
-            f'<div class="toc-sub">{_article_meta_line(article)}</div>'
+            f'<div class="toc-sub">{_article_meta_line(article, is_zh)}</div>'
             f"</li>"
         )
     list_markup = "\n".join(items_html)
     total_mins = sum(a.read_minutes for a in digest.articles)
+    summary_meta = (
+        f"共 {len(digest.articles)} 篇 · 约 {total_mins} 分钟"
+        if is_zh
+        else f"{len(digest.articles)} articles · ~{total_mins} min total"
+    )
     return f"""\
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{lang}" lang="{lang}">
 <head>
   <meta charset="utf-8"/>
   <title>{_esc(digest.title)}</title>
   <link rel="stylesheet" type="text/css" href="style.css"/>
 </head>
-<body>
+<body{body_class}>
   <h1 class="article-title">{_esc(digest.title)}</h1>
-  <div class="meta">{len(digest.articles)} articles · ~{total_mins} min total</div>
+  <div class="meta">{summary_meta}</div>
   <ul class="toc-list">
 {list_markup}
   </ul>
@@ -180,19 +206,30 @@ def _render_overview_xhtml(digest: Digest) -> str:
 """
 
 
-def _render_article_xhtml(idx: int, total: int, article: Article) -> str:
-    meta = _article_meta_line(article)
-    links: List[str] = [f'<a href="{_esc(article.url)}">Original article</a>']
-    if article.comments_url and article.comments_url != article.url:
-        links.append(f'<a href="{_esc(article.comments_url)}">Discussion</a>')
-    links.append('<a href="overview.xhtml">Back to contents</a>')
+def _render_article_xhtml(idx: int, total: int, article: Article, digest: Digest) -> str:
+    is_zh = _is_zh(digest)
+    lang = _esc(digest.language)
+    body_class = ' class="lang-zh"' if is_zh else ""
+
+    meta = _article_meta_line(article, is_zh)
+    if is_zh:
+        pos_label = f"第 {idx} / {total} 篇"
+        links: List[str] = [f'<a href="{_esc(article.url)}">原文链接</a>']
+        links.append('<a href="overview.xhtml">返回目录</a>')
+    else:
+        pos_label = f"Article {idx} of {total}"
+        links = [f'<a href="{_esc(article.url)}">Original article</a>']
+        if article.comments_url and article.comments_url != article.url:
+            links.append(f'<a href="{_esc(article.comments_url)}">Discussion</a>')
+        links.append('<a href="overview.xhtml">Back to contents</a>')
     footer_links = " · ".join(links)
 
     summary_block = ""
     if article.summary:
+        summary_label = "摘要" if is_zh else "TLDR Summary"
         summary_block = (
             '  <div class="summary-box">\n'
-            '    <div class="summary-label">TLDR Summary</div>\n'
+            f'    <div class="summary-label">{summary_label}</div>\n'
             f"    <p>{_esc(article.summary)}</p>\n"
             "  </div>\n"
         )
@@ -200,15 +237,15 @@ def _render_article_xhtml(idx: int, total: int, article: Article) -> str:
     return f"""\
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{lang}" lang="{lang}">
 <head>
   <meta charset="utf-8"/>
   <title>{_esc(article.title)}</title>
   <link rel="stylesheet" type="text/css" href="style.css"/>
 </head>
-<body>
+<body{body_class}>
   <h1 class="article-title">{_esc(article.title)}</h1>
-  <div class="meta">Article {idx} of {total} · {meta}</div>
+  <div class="meta">{pos_label} · {meta}</div>
 {summary_block}  <div class="article-body">
 {article.body_xhtml}
   </div>
@@ -219,7 +256,12 @@ def _render_article_xhtml(idx: int, total: int, article: Article) -> str:
 
 
 def _render_nav_xhtml(digest: Digest) -> str:
-    nav_items = ['<li><a href="overview.xhtml">Front Page Contents</a></li>']
+    is_zh = _is_zh(digest)
+    lang = _esc(digest.language)
+    toc_title = "目录" if is_zh else "Table of Contents"
+    front_label = "目录" if is_zh else "Front Page Contents"
+
+    nav_items = [f'<li><a href="overview.xhtml">{front_label}</a></li>']
     for idx, article in enumerate(digest.articles, start=1):
         nav_items.append(
             f'<li><a href="article_{idx:02d}.xhtml">{idx}. {_esc(article.title)}</a></li>'
@@ -228,10 +270,10 @@ def _render_nav_xhtml(digest: Digest) -> str:
     return f"""\
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="{lang}" lang="{lang}">
 <head>
   <meta charset="utf-8"/>
-  <title>Table of Contents</title>
+  <title>{toc_title}</title>
 </head>
 <body>
   <nav epub:type="toc" id="toc">
@@ -246,9 +288,10 @@ def _render_nav_xhtml(digest: Digest) -> str:
 
 
 def _render_toc_ncx(book_id: str, digest: Digest) -> str:
+    front_label = "目录" if _is_zh(digest) else "Front Page Contents"
     nav_points: List[str] = [
         f"""    <navPoint id="navpoint-1" playOrder="1">
-      <navLabel><text>Front Page Contents</text></navLabel>
+      <navLabel><text>{front_label}</text></navLabel>
       <content src="overview.xhtml"/>
     </navPoint>"""
     ]
@@ -280,6 +323,7 @@ def _render_toc_ncx(book_id: str, digest: Digest) -> str:
 
 def _render_content_opf(book_id: str, digest: Digest) -> str:
     modified = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    creator = digest.source_title if _is_zh(digest) else f"{digest.source_title} Digest"
     manifest_items = [
         '    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>',
         '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
@@ -297,12 +341,12 @@ def _render_content_opf(book_id: str, digest: Digest) -> str:
     spine_xml = "\n".join(spine_items)
     return f"""\
 <?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">
+<package xmlns="http://www.idpf.org/opf/2007/opf" version="3.0" unique-identifier="bookid">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:identifier id="bookid">{_esc(book_id)}</dc:identifier>
     <dc:title>{_esc(digest.title)}</dc:title>
-    <dc:creator>{_esc(digest.source_title)} Digest</dc:creator>
-    <dc:language>en</dc:language>
+    <dc:creator>{_esc(creator)}</dc:creator>
+    <dc:language>{_esc(digest.language)}</dc:language>
     <dc:date>{digest.digest_date.isoformat()}</dc:date>
     <meta property="dcterms:modified">{modified}</meta>
   </metadata>
@@ -347,7 +391,7 @@ def build_epub(digest: Digest, output_path: Path) -> Path:
 
         total = len(digest.articles)
         for idx, article in enumerate(digest.articles, start=1):
-            chapter_xhtml = _render_article_xhtml(idx, total, article)
+            chapter_xhtml = _render_article_xhtml(idx, total, article, digest)
             zf.writestr(
                 f"OEBPS/article_{idx:02d}.xhtml",
                 chapter_xhtml,

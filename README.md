@@ -6,9 +6,11 @@ Works with **both** KOReader and Stock Kobo (Nickel) since digests are standard 
 
 ## How It Works
 
-1. **GitHub Actions (daily at 13:00 UTC / 5–6 AM PT)** runs `kobo-digest build --source hn --source tldr`:
-   - **Hacker News (`YYYY-MM-DD-HN.epub`)**: Fetches top stories via the official HN Firebase API and extracts clean full articles via `trafilatura`.
-   - **TLDR Tech (`YYYY-MM-DD-TLDR.epub`)**: Fetches the latest TLDR Tech issue via `tldr.tech/api/rss/tech`, filters out sponsors, includes TLDR's summary box at the top of each chapter, and appends the full extracted article (falling back cleanly to the TLDR summary if a source is paywalled).
+1. **GitHub Actions (daily at 13:00 UTC / 5–6 AM PT)** runs `kobo-digest build`:
+   - **Hacker News (`YYYY-MM-DD-HN.epub`)**: Top stories via the official HN Firebase API + full articles via `trafilatura`.
+   - **TLDR Tech (`YYYY-MM-DD-TLDR.epub`)**: Latest TLDR Tech issue via `tldr.tech/api/rss/tech`, sponsor-filtered, with TLDR summaries + full linked articles.
+   - **BBC 中文 (`YYYY-MM-DD-BBC-ZH.epub`)**: Daily Simplified Chinese news articles from BBC 中文 (`/simp`), pure Chinese with `zh-Hans` typography.
+   - **阮一峰科技爱好者周刊 (`YYYY-MM-DD-RUANYF.epub`)**: Weekly Friday tech digest split into per-section Simplified Chinese chapters.
    - Purges any digest older than **4 days** and writes `manifest.json` + `index.html` to the `gh-pages` branch.
 2. **KOReader Plugin (`dailydigest.koplugin`) on your Kobo**:
    - Whenever your Kobo connects to Wi-Fi in KOReader (or when you tap **Tools → Daily Digest → Sync now**), it checks `manifest.json`, downloads any new EPUBs into `/mnt/onboard/DailyReads/`, and deletes any local `YYYY-MM-DD-*.epub` (plus its `.sdr` sidecar folder) older than 4 days.

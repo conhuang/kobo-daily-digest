@@ -114,11 +114,21 @@ DROP_TREE_TAGS = {
     "footer",
 }
 
-TRACKING_QUERY_PREFIXES = ("utm_",)
+TRACKING_QUERY_PREFIXES = ("utm_", "at_")
 TRACKING_QUERY_KEYS = {"reflink", "fbclid", "gclid", "mc_cid", "mc_eid"}
 
 MAX_RESPONSE_BYTES = 4 * 1024 * 1024  # 4 MB cap per article page
 MIN_TEXT_CHARS = 220
+CJK_CHAR_RE = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf]")
+LATIN_WORD_RE = re.compile(r"\b[A-Za-z0-9_]+\b")
+
+
+def count_text_metrics(xhtml_or_text: str) -> Tuple[int, int]:
+    """Return (latin_word_count, cjk_char_count) from HTML/XHTML or plain text."""
+    plain = re.sub(r"<[^>]+>", " ", xhtml_or_text)
+    cjk_count = len(CJK_CHAR_RE.findall(plain))
+    latin_count = len(LATIN_WORD_RE.findall(plain))
+    return latin_count, cjk_count
 
 
 def clean_url(url: str) -> str:
@@ -235,6 +245,9 @@ def sanitize_fragment_to_xhtml(raw_html: str) -> Tuple[str, int]:
         el.tag = tag
         for child in new_children:
             el.append(child)
+        # Drop empty <p> elements left behind after stripping <img>/<script>.
+        if tag == "p" and len(el) == 0 and not (el.text and el.text.strip()):
+            return None
         return el
 
     cleaned_root = _clean(root)
