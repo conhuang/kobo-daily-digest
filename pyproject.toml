@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kobo-daily-digest"
+version = "0.1.0"
+description = "Daily Hacker News (and TLDR) EPUB digest generator with 4-day retention and KOReader Wi-Fi auto-sync."
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.31.0",
+    "trafilatura>=1.8.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+]
+
+[project.scripts]
+kobo-digest = "kobo_digest.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
