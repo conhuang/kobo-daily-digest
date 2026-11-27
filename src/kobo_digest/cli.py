@@ -5,16 +5,17 @@ from datetime import date
 import logging
 from pathlib import Path
 import sys
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .epub_builder import build_epub
 from .fetcher_hn import fetch_hn_digest
+from .fetcher_tldr import fetch_tldr_digest
 from .models import Digest
 from .storage import purge_old_digests, write_manifest_and_index
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_SOURCES = ("hn",)
+SUPPORTED_SOURCES = ("hn", "tldr")
 
 
 def cmd_build(args: argparse.Namespace) -> int:
@@ -24,18 +25,25 @@ def cmd_build(args: argparse.Namespace) -> int:
 
     updated: Dict[str, Digest] = {}
     for source in sources:
+        digest: Optional[Digest]
         if source == "hn":
             digest = fetch_hn_digest(
                 digest_date=target_date,
                 max_articles=args.max_articles,
                 candidate_pool=args.candidate_pool,
             )
+        elif source == "tldr":
+            digest = fetch_tldr_digest(
+                digest_date=target_date,
+                max_articles=max(args.max_articles, 20),
+                exact_date=bool(args.date),
+            )
         else:
             logger.error("Unknown source %r (supported: %s)", source, ", ".join(SUPPORTED_SOURCES))
             return 2
 
-        if not digest.articles:
-            logger.warning("No readable articles fetched for source=%s; skipping EPUB creation.", source)
+        if digest is None or not digest.articles:
+            logger.info("No digest generated for source=%s on %s; skipping.", source, target_date)
             continue
 
         epub_path = out_dir / digest.filename
@@ -68,7 +76,7 @@ def cmd_purge(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kobo-digest",
-        description="Build daily Hacker News EPUB digests for Kobo with automatic retention purging.",
+        description="Build daily Hacker News & TLDR Tech EPUB digests for Kobo with automatic retention purging.",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -79,11 +87,11 @@ def build_parser() -> argparse.ArgumentParser:
         dest="sources",
         action="append",
         choices=SUPPORTED_SOURCES,
-        help="Source(s) to build (can be repeated; defaults to hn).",
+        help="Source(s) to build (can be repeated; defaults to hn and tldr).",
     )
     p_build.add_argument("--out", default="dist/digests", help="Output directory for EPUBs and manifest.json.")
-    p_build.add_argument("--max-articles", type=int, default=15, help="Max readable articles per digest (default: 15).")
-    p_build.add_argument("--candidate-pool", type=int, default=40, help="Candidate stories to inspect (default: 40).")
+    p_build.add_argument("--max-articles", type=int, default=15, help="Max readable articles per HN digest (default: 15).")
+    p_build.add_argument("--candidate-pool", type=int, default=40, help="Candidate HN stories to inspect (default: 40).")
     p_build.add_argument("--retention-days", type=int, default=4, help="Days of digests to keep (default: 4).")
     p_build.add_argument("--date", default=None, help="Override digest date (YYYY-MM-DD, defaults to today).")
     p_build.set_defaults(func=cmd_build)
@@ -101,7 +109,7 @@ def main(argv: List[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "build" and not args.sources:
-        args.sources = ["hn"]
+        args.sources = ["hn", "tldr"]
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

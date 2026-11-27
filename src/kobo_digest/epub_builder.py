@@ -39,6 +39,25 @@ h1.article-title {
   color: #333;
   text-decoration: underline;
 }
+.summary-box {
+  border-left: 3px solid #444;
+  background-color: #f4f4f4;
+  padding: 0.65em 0.85em;
+  margin: 0 0 1.15em 0;
+  font-size: 0.94em;
+}
+.summary-label {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-weight: bold;
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3em;
+}
+.fallback-note {
+  color: #555;
+  font-size: 0.9em;
+}
 p {
   margin-top: 0;
   margin-bottom: 0.8em;
@@ -115,6 +134,8 @@ def _esc(text: str) -> str:
 
 def _article_meta_line(article: Article) -> str:
     bits: List[str] = []
+    if article.section:
+        bits.append(_esc(article.section))
     if article.domain:
         bits.append(_esc(article.domain))
     if article.score is not None:
@@ -167,6 +188,15 @@ def _render_article_xhtml(idx: int, total: int, article: Article) -> str:
     links.append('<a href="overview.xhtml">Back to contents</a>')
     footer_links = " · ".join(links)
 
+    summary_block = ""
+    if article.summary:
+        summary_block = (
+            '  <div class="summary-box">\n'
+            '    <div class="summary-label">TLDR Summary</div>\n'
+            f"    <p>{_esc(article.summary)}</p>\n"
+            "  </div>\n"
+        )
+
     return f"""\
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
@@ -179,7 +209,7 @@ def _render_article_xhtml(idx: int, total: int, article: Article) -> str:
 <body>
   <h1 class="article-title">{_esc(article.title)}</h1>
   <div class="meta">Article {idx} of {total} · {meta}</div>
-  <div class="article-body">
+{summary_block}  <div class="article-body">
 {article.body_xhtml}
   </div>
   <div class="article-footer">{footer_links}</div>

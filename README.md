@@ -1,15 +1,14 @@
 # Kobo Daily Digest
 
-Automatically builds daily e-ink-friendly EPUB digests (starting with **Hacker News**, ready to add **TLDR newsletters** next), keeps a rolling **4-day window**, and syncs over Wi-Fi directly into a folder on your Kobo (`/mnt/onboard/DailyReads`) with automatic 4-day local purging.
+Automatically builds daily e-ink-friendly EPUB digests for **Hacker News** (`YYYY-MM-DD-HN.epub`) and **TLDR Tech** (`YYYY-MM-DD-TLDR.epub`), keeps a rolling **4-day window**, and syncs over Wi-Fi directly into a folder on your Kobo (`/mnt/onboard/DailyReads`) with automatic 4-day local purging.
 
 Works with **both** KOReader and Stock Kobo (Nickel) since digests are standard EPUBs saved in a normal Kobo folder.
 
 ## How It Works
 
-1. **GitHub Actions (daily at 13:00 UTC / 5–6 AM PT)** runs `kobo-digest build --source hn`:
-   - Fetches top Hacker News stories via the official HN Firebase API.
-   - Extracts clean article text using `trafilatura` and sanitizes into strict XHTML.
-   - Builds `YYYY-MM-DD-HN.epub` with a front-page table of contents and one chapter per article.
+1. **GitHub Actions (daily at 13:00 UTC / 5–6 AM PT)** runs `kobo-digest build --source hn --source tldr`:
+   - **Hacker News (`YYYY-MM-DD-HN.epub`)**: Fetches top stories via the official HN Firebase API and extracts clean full articles via `trafilatura`.
+   - **TLDR Tech (`YYYY-MM-DD-TLDR.epub`)**: Fetches the latest TLDR Tech issue via `tldr.tech/api/rss/tech`, filters out sponsors, includes TLDR's summary box at the top of each chapter, and appends the full extracted article (falling back cleanly to the TLDR summary if a source is paywalled).
    - Purges any digest older than **4 days** and writes `manifest.json` + `index.html` to the `gh-pages` branch.
 2. **KOReader Plugin (`dailydigest.koplugin`) on your Kobo**:
    - Whenever your Kobo connects to Wi-Fi in KOReader (or when you tap **Tools → Daily Digest → Sync now**), it checks `manifest.json`, downloads any new EPUBs into `/mnt/onboard/DailyReads/`, and deletes any local `YYYY-MM-DD-*.epub` (plus its `.sdr` sidecar folder) older than 4 days.

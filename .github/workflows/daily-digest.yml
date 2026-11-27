@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       max_articles:
-        description: "Max articles per digest"
+        description: "Max articles per Hacker News digest"
         required: false
         default: "15"
       retention_days:
@@ -50,13 +50,14 @@ jobs:
           fi
           mkdir -p dist/digests
 
-      - name: Build today's digest and purge digests older than retention window
+      - name: Build today's digests (HN + TLDR Tech) and purge expired digests
         env:
           MAX_ARTICLES: ${{ github.event.inputs.max_articles || '15' }}
           RETENTION_DAYS: ${{ github.event.inputs.retention_days || '4' }}
         run: |
           kobo-digest build \
             --source hn \
+            --source tldr \
             --out dist/digests \
             --max-articles "$MAX_ARTICLES" \
             --retention-days "$RETENTION_DAYS"

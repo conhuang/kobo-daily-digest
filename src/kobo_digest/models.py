@@ -13,6 +13,7 @@ class Article:
     url: str
     body_xhtml: str
     source_name: str
+    section: Optional[str] = None
     author: Optional[str] = None
     domain: Optional[str] = None
     score: Optional[int] = None
@@ -33,7 +34,7 @@ class Digest:
     """A collection of articles for one source on one calendar day."""
 
     source_code: str  # e.g. "HN", "TLDR"
-    source_title: str  # e.g. "Hacker News"
+    source_title: str  # e.g. "Hacker News", "TLDR Tech"
     digest_date: date
     articles: List[Article] = field(default_factory=list)
 

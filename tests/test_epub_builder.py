@@ -5,8 +5,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 import zipfile
 
+from kobo_digest.article_extractor import sanitize_fragment_to_xhtml
 from kobo_digest.epub_builder import build_epub
-from kobo_digest.fetcher_hn import sanitize_fragment_to_xhtml
 from kobo_digest.models import Article, Digest
 
 
