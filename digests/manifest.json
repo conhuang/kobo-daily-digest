@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "generated_at": "2026-11-28T20:48:01Z",
+  "retention_days": 4,
+  "digests": [
+    {
+      "filename": "2026-11-28-HN.epub",
+      "source": "HN",
+      "date": "2026-11-28",
+      "title": "Hacker News Daily \u2014 2026-11-28",
+      "article_count": 15,
+      "size_bytes": 77666,
+      "sha256": "1c96cfb4f46190994e8ff730bdd312961255c704ba8642c6b7ae1af12d1009e0",
+      "url": "2026-11-28-HN.epub"
+    },
+    {
+      "filename": "2026-11-28-BBC-ZH.epub",
+      "source": "BBC-ZH",
+      "date": "2026-11-28",
+      "title": "BBC \u4e2d\u6587 \u2014 2026-11-28",
+      "article_count": 10,
+      "size_bytes": 53233,
+      "sha256": "7efe7adb6715e9c8217638551135d145b92c6d98108ea6e000fd83a639db10e1",
+      "url": "2026-11-28-BBC-ZH.epub"
+    },
+    {
+      "filename": "2026-11-27-TLDR.epub",
+      "source": "TLDR",
+      "date": "2026-11-27",
+      "title": "TLDR Tech Daily \u2014 2026-11-27",
+      "article_count": 14,
+      "size_bytes": 53223,
+      "sha256": "cca2ff70e919fcea778d6c3ae165a83d5fe1f66c451ae60eb3a0ea902bdd0205",
+      "url": "2026-11-27-TLDR.epub"
+    },
+    {
+      "filename": "2026-11-27-RUANYF.epub",
+      "source": "RUANYF",
+      "date": "2026-11-27",
+      "title": "\u79d1\u6280\u7231\u597d\u8005\u5468\u520a\uff08\u7b2c 421 \u671f\uff09\uff1aAI \u7684\u75af\u72c2\u9020\u5bcc",
+      "article_count": 9,
+      "size_bytes": 17702,
+      "sha256": "bab5754c85389db0f5466671747944a00abce43dbdc6e741412df5279cd09eaf",
+      "url": "2026-11-27-RUANYF.epub"
+    },
+    {
+      "filename": "2026-11-27-HN.epub",
+      "source": "HN",
+      "date": "2026-11-27",
+      "title": "Hacker News Daily \u2014 2026-11-27",
+      "article_count": 15,
+      "size_bytes": 78916,
+      "sha256": "e60e8b3fda608c6947a2d2ba878565505831b62290ffc8cb6fbc6610eb4f25f3",
+      "url": "2026-11-27-HN.epub"
+    },
+    {
+      "filename": "2026-11-27-BBC-ZH.epub",
+      "source": "BBC-ZH",
+      "date": "2026-11-27",
+      "title": "BBC \u4e2d\u6587 \u2014 2026-11-27",
+      "article_count": 10,
+      "size_bytes": 59359,
+      "sha256": "949951f66a26d6410f60d747bc466ed68fa8cb09796ec9ffc753fb417646885f",
+      "url": "2026-11-27-BBC-ZH.epub"
+    },
+    {
+      "filename": "2026-11-26-TLDR.epub",
+      "source": "TLDR",
+      "date": "2026-11-26",
+      "title": "TLDR Tech Daily \u2014 2026-11-26",
+      "article_count": 14,
+      "size_bytes": 103385,
+      "sha256": "31793400ebbe77a006f93fb579c46f54ff8f2fc54efaec9bf78fda9040978fd8",
+      "url": "2026-11-26-TLDR.epub"
+    }
+  ]
+}
